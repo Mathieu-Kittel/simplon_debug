@@ -2,6 +2,7 @@
 *.log
 tests/
 tmp/
+flask_monitoringdashboard.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
