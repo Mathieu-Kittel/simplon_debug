@@ -1,0 +1,6 @@
+flask
+torch
+keras
+numpy
+pillow
+gunicorn
