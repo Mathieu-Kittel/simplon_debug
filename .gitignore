@@ -1,6 +1,5 @@
 # Ajouts manuels
 *.log
-tests/
 tmp/
 flask_monitoringdashboard.db
 
