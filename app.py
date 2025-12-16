@@ -21,6 +21,9 @@ from PIL import Image
 
 
 # ---------------- Logger ---------------- #
+
+os.makedirs("logs", exist_ok=True)
+
 logger = logging.getLogger("app_log")
 logger.setLevel(logging.DEBUG)
 
