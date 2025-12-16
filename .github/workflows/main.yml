@@ -1,0 +1,37 @@
+name: CI - Simplon Debug
+
+# Déclenchement du workflow
+on:
+  # Pour chaque push/pull-request
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Jobs
+jobs:
+  tests:
+    # Définit le type de VM Github sur laquelle exécuter
+    runs-on: ubuntu-latest
+
+    steps:
+      # Récupération du code du dépôt
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Setup Python 3.12.11
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.11"
+
+      # MàJ pip + requirements.txt
+      - name: Setup Dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Exécution des tests
+      - name: Run application tests
+        run: |
+          pytest tests/test_app.py -v
