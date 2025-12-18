@@ -26,6 +26,18 @@ from pymongo.errors import PyMongoError
 from dotenv         import load_dotenv
 from datetime       import datetime, timezone
 
+load_dotenv()
+
+# -------------- Run Check --------------- #
+# run_check permet de skip une partie des imports .env
+# pour éviter les erreurs pytest
+
+if os.getenv("run_check"):
+    run_check = 1
+else:
+    run_check = 0
+
+
 # ---------------- Logger ---------------- #
 
 os.makedirs("logs", exist_ok=True)
@@ -50,21 +62,21 @@ cmd_handler.setLevel(logging.ERROR)
 
 # Enfin un troisième handler, SMTP
 
-# Récupération des variables mail
-load_dotenv()
-smtp_from = os.getenv("fromaddr")
-smtp_cred = os.getenv("credentials")
+if run_check:
+    # Récupération des variables mail
+    smtp_from = os.getenv("fromaddr")
+    smtp_cred = os.getenv("credentials")
 
-# Handler smtp
-smtp_handler = SMTPHandler(
-    mailhost=("smtp.gmail.com", 587),
-    fromaddr=smtp_from,
-    toaddrs=["exemple_mail@ggmail.com"],
-    subject="🚨 Erreur application Flask",
-    credentials=(smtp_from, smtp_cred),
-    secure=()
-)
-smtp_handler.setLevel(logging.CRITICAL)
+    # Handler smtp
+    smtp_handler = SMTPHandler(
+        mailhost=("smtp.gmail.com", 587),
+        fromaddr=smtp_from,
+        toaddrs=["exemple_mail@ggmail.com"],
+        subject="🚨 Erreur application Flask",
+        credentials=(smtp_from, smtp_cred),
+        secure=()
+    )
+    smtp_handler.setLevel(logging.CRITICAL)
 
 
 # Au changement de fichier, on ajoute la date au .log en cours
@@ -74,12 +86,14 @@ app_handler.suffix = "%d_%m_%Y.log"
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 app_handler.setFormatter(formatter)
 cmd_handler.setFormatter(formatter)
-smtp_handler.setFormatter(formatter)
+if run_check:
+    smtp_handler.setFormatter(formatter)
 
 # Ajout des handlers à logger
 logger.addHandler(app_handler)
 logger.addHandler(cmd_handler)
-logger.addHandler(smtp_handler)
+if run_check:
+    logger.addHandler(smtp_handler)
 
 # Log d'initialisation
 logger.debug("Instanciation du logger.")
@@ -102,31 +116,29 @@ sys.excepthook = handle_exception
 logger.debug("Changement du hook OK.")
 
 
-# ------------- Load dot env -------------
-# load_dotenv()
+# --------------- MongoDB --------------- #
 
-mongo_uri = os.getenv("mongo_uri")
-db_name = os.getenv("db_name")
-collection_name = os.getenv("collection_name")
+if run_check:
+    mongo_uri = os.getenv("mongo_uri")
+    db_name = os.getenv("db_name")
+    collection_name = os.getenv("collection_name")
 
-logger.debug("Chargement des variables environnement OK.")
+    logger.debug("Chargement des variables MongoDB OK.")
 
-# --------------- MongoDB ---------------
-
-# Connexion au serveur/BDD/Collection Mongo
-mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=10000)
-mongo_db = mongo_client[db_name]
-mongo_collection = mongo_db[collection_name]
+    # Connexion au serveur/BDD/Collection Mongo
+    mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=10000)
+    mongo_db = mongo_client[db_name]
+    mongo_collection = mongo_db[collection_name]
 
 
-# Ping pour vérifier la connexion
+    # Ping pour vérifier la connexion
 
-try:
-    mongo_client.admin.command("ping")
-    logger.info("Ping MongoDB OK.")
-except PyMongoError as e:
-    logger.error("Connexion MongoDB échouée.", exc_info=e)
-    raise
+    try:
+        mongo_client.admin.command("ping")
+        logger.info("Ping MongoDB OK.")
+    except PyMongoError as e:
+        logger.error("Connexion MongoDB échouée.", exc_info=e)
+        raise
 
 
 
