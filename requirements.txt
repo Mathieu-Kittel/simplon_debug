@@ -1,8 +1,10 @@
+python-dotenv==1.2.1
 Flask==3.1.2
 flask_monitoringdashboard==4.0.4
 keras==3.11.3
 numpy==2.3.5
 Pillow==12.0.0
+pymongo==4.15.5
 pytest==8.4.2
 Requests==2.32.0
 scikit_learn==1.8.0
