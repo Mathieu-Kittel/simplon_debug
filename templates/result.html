@@ -6,23 +6,45 @@
     <style>
       body { font-family: system-ui, sans-serif; margin: 2rem; }
       img { max-width: 420px; border-radius: 10px; display: block; margin-bottom: 1rem; }
-      .pill { padding:.5rem 1rem; margin-right:.5rem; border-radius:999px; border:1px solid #aaa; background:#f5f5f5; opacity:.6; cursor:not-allowed; }
-      .btn { padding:.6rem 1rem; border-radius:8px; border:1px solid #222; background:#fff; text-decoration:none; }
+      .pill { padding:.5rem 1rem; margin-right:.5rem; border-radius:999px; border:1px solid #aaa; background:#f5f5f5; }
+      .pill input { margin-right:.3rem; }
+      .btn { padding:.6rem 1rem; border-radius:8px; border:1px solid #222; background:#fff; cursor:pointer; }
+      .btn-link { text-decoration:none; }
+      .feedback-box { margin-top: 2rem; padding: 1rem; border: 1px solid #ddd; border-radius: 10px; max-width: 520px; }
     </style>
   </head>
+
   <body>
     <h1>Résultat</h1>
+
     <img src="{{ image_data_url }}" alt="submitted image" />
+
     <h2>Classe prédite : {{ predicted_label }}</h2>
     <p>Confiance : {{ '%.3f'|format(confidence) }}</p>
 
-    <div>
-      {% for c in classes %}
-        <button class="pill" disabled>{{ c }}</button>
-      {% endfor %}
+    <!-- ================= FEEDBACK ================= -->
+    <div class="feedback-box">
+      <h3>Feedback :</h3>
+
+      <form method="post" action="/feedback">
+        <!-- Champs cachés : données modèle -->
+        <input type="hidden" name="image_base64" value="{{ image_data_url }}">
+        <input type="hidden" name="model_prediction" value="{{ predicted_label }}">
+        <input type="hidden" name="model_confidence" value="{{ confidence }}">
+
+        <!-- Choix utilisateur -->
+        {% for c in classes %}
+          <label class="pill">
+            <input type="radio" name="user_feedback" value="{{ c }}" required>
+            {{ c }}
+          </label>
+        {% endfor %}
+
+        <br><br>
+        <button class="btn" type="submit">Envoyer le feedback</button>
+      </form>
     </div>
 
-    <p><a class="btn" href="/feedback">Envoyer un feedback (mock)</a></p>
-    <p><a href="/">↩︎ Revenir</a></p>
+    <p><a class="btn-link" href="/">↩︎ Revenir</a></p>
   </body>
 </html>

@@ -5,13 +5,15 @@ import os
 os.environ["KERAS_BACKEND"] = "torch"
 
 import logging
-from logging.handlers import TimedRotatingFileHandler
+from logging.handlers import (TimedRotatingFileHandler,
+                              SMTPHandler) 
 
 import io
 import base64
 
 from flask import Flask, render_template, request, redirect, url_for
 import flask_monitoringdashboard as dashboard
+
 from werkzeug.utils import secure_filename
 
 import numpy as np
@@ -19,6 +21,10 @@ import keras
 
 from PIL import Image
 
+from pymongo        import MongoClient
+from pymongo.errors import PyMongoError
+from dotenv         import load_dotenv
+from datetime       import datetime, timezone
 
 # ---------------- Logger ---------------- #
 
@@ -42,6 +48,25 @@ app_handler.setLevel(logging.DEBUG)
 cmd_handler = logging.StreamHandler()
 cmd_handler.setLevel(logging.ERROR)
 
+# Enfin un troisième handler, SMTP
+
+# Récupération des variables mail
+load_dotenv()
+smtp_from = os.getenv("fromaddr")
+smtp_cred = os.getenv("credentials")
+
+# Handler smtp
+smtp_handler = SMTPHandler(
+    mailhost=("smtp.gmail.com", 587),
+    fromaddr=smtp_from,
+    toaddrs=["exemple_mail@ggmail.com"],
+    subject="🚨 Erreur application Flask",
+    credentials=(smtp_from, smtp_cred),
+    secure=()
+)
+smtp_handler.setLevel(logging.CRITICAL)
+
+
 # Au changement de fichier, on ajoute la date au .log en cours
 app_handler.suffix = "%d_%m_%Y.log"
 
@@ -49,10 +74,12 @@ app_handler.suffix = "%d_%m_%Y.log"
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 app_handler.setFormatter(formatter)
 cmd_handler.setFormatter(formatter)
+smtp_handler.setFormatter(formatter)
 
 # Ajout des handlers à logger
 logger.addHandler(app_handler)
 logger.addHandler(cmd_handler)
+logger.addHandler(smtp_handler)
 
 # Log d'initialisation
 logger.debug("Instanciation du logger.")
@@ -68,11 +95,40 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     if issubclass(exc_type, KeyboardInterrupt):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
-    logger.error("Exception non gérée", exc_info=(exc_type, exc_value, exc_traceback))
+    logger.critical("Exception non gérée", exc_info=(exc_type, exc_value, exc_traceback))
 
 # Changement de hook
 sys.excepthook = handle_exception
-logger.debug("Changement du hook.")
+logger.debug("Changement du hook OK.")
+
+
+# ------------- Load dot env -------------
+# load_dotenv()
+
+mongo_uri = os.getenv("mongo_uri")
+db_name = os.getenv("db_name")
+collection_name = os.getenv("collection_name")
+
+logger.debug("Chargement des variables environnement OK.")
+
+# --------------- MongoDB ---------------
+
+# Connexion au serveur/BDD/Collection Mongo
+mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=10000)
+mongo_db = mongo_client[db_name]
+mongo_collection = mongo_db[collection_name]
+
+
+# Ping pour vérifier la connexion
+
+try:
+    mongo_client.admin.command("ping")
+    logger.info("Ping MongoDB OK.")
+except PyMongoError as e:
+    logger.error("Connexion MongoDB échouée.", exc_info=e)
+    raise
+
+
 
 # ---------------- Config ----------------
 UPLOAD_FOLDER = "static/uploads"
@@ -85,7 +141,7 @@ logger.debug("Instance Flask OK")
 
 
 
-# ---------------- Model ----------------+
+# ---------------- Model ----------------
 MODEL_PATH = "models/final_cnn.keras"
 model = keras.saving.load_model(MODEL_PATH, compile=False)
 logger.debug("Model correctement chargé.")
@@ -177,7 +233,7 @@ def preprocess_from_pil(pil_img: Image.Image, model_shape: tuple) -> np.ndarray:
     return img_array
 
 logger.info("Initialisation des variables et des fonctions\
-             réussie.")
+réussie.")
 
 # ---------------- Routes ----------------
 @app.route("/", methods=["GET"])
@@ -212,6 +268,7 @@ def predict():
         - `classes` : liste des classes (pour les boutons).
     """
 
+    # Vérification de la présence d'une image valide
     if "file" not in request.files:
         return redirect("/")
     
@@ -219,15 +276,18 @@ def predict():
     if file.filename == "" or not allowed_file(secure_filename(file.filename)):
         return redirect("/")
 
+    # Lecture et traitement de l'image
     raw = file.read()
     pil_img = Image.open(io.BytesIO(raw))
     img_array = preprocess_from_pil(pil_img, model_H_W)
 
+    # Prédiction
     probs = model.predict(img_array, verbose=0)[0]
     cls_idx = int(np.argmax(probs))
     label = CLASSES[cls_idx]
     conf = float(probs[cls_idx])
 
+    # Transformation en url et base64
     image_data_url = to_data_url(pil_img, fmt="JPEG")
 
     return render_template("result.html", 
@@ -236,14 +296,47 @@ def predict():
                            confidence=conf, 
                            classes=CLASSES)
 
-@app.route("/feedback", methods=["GET"])
-def feedback_ok():
-    """Affiche la page de confirmation de feedback (placeholder).
-
-    Returns:
-        Réponse HTML rendant le template "feedback_ok.html".
+@app.route("/feedback", methods=["POST"])
+def feedback():
     """
-    return render_template("feedback_ok.html")
+    Réception et stockage du feedback utilisateur en base MongoDB.
+    Redirige vers la page de feedback.
+    """
+
+    # Message par défaut pour la page de feedback
+    message = "Merci pour le feedback ! 👍"
+
+    # Récupération des informations pour le feedback
+    try:
+        image_data_url   = request.form.get("image_base64")
+        model_prediction = request.form.get("model_prediction")
+        model_confidence = request.form.get("model_confidence")
+        user_feedback    = request.form.get("user_feedback")
+
+        # On retire le header HTML pour ne garder que la base64
+        image_base64 = None
+        if image_data_url and "," in image_data_url:
+            image_base64 = image_data_url.split(",", 1)[1]
+
+        # Constitution de l'objet à insérer en base de données
+        doc = {
+            "image_base64": image_base64,
+            "model_prediction": model_prediction,
+            "model_confidence": float(model_confidence) if model_confidence is not None else None,
+            "user_feedback": user_feedback,
+            "created_at": datetime.now(timezone.utc),
+            "_init": True
+        }
+
+        # Insertion de l'objet dans MongoDB
+        mongo_collection.insert_one(doc)
+        logger.info("Feedback inséré en base MongoDB.")
+
+    except Exception as e:
+        logger.exception(f"Erreur lors de l'insertion du feedback :\n{e}")
+        message = "Une erreur est survenue, merci d'avoir essayé. 😉"
+
+    return render_template("feedback_ok.html", message=message)
 
 
 # Ajout du dashboard Flask
