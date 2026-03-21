@@ -62,7 +62,7 @@ cmd_handler.setLevel(logging.ERROR)
 
 # Enfin un troisième handler, SMTP
 
-if run_check:
+if run_check: # Partie du code non exécutée lors des pytests.
     # Récupération des variables mail
     smtp_from = os.getenv("fromaddr")
     smtp_cred = os.getenv("credentials")
@@ -72,7 +72,7 @@ if run_check:
         mailhost=("smtp.gmail.com", 587),
         fromaddr=smtp_from,
         toaddrs=["exemple_mail@ggmail.com"],
-        subject="🚨 Erreur application Flask",
+        subject="Erreur Classificateur Satellite",
         credentials=(smtp_from, smtp_cred),
         secure=()
     )
@@ -148,7 +148,12 @@ ALLOWED_EXT   = {"png", "jpg", "jpeg", "webp"}
 CLASSES       = ['desert', 'forest', 'meadow', 'mountain']
 
 # Instance Flask
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder="templates",
+    static_folder="templates/css",   
+    static_url_path="/css" 
+)
 logger.debug("Instance Flask OK")
 
 

@@ -1,0 +1,218 @@
+/* ======================================================
+   Palette imposée
+   ====================================================== */
+:root{
+  --c1:#819199;
+  --c2:#999281;
+  --c3:#819997;
+  --c4:#004969;
+
+  --text:#0f1a1d;
+  --muted:rgba(15,26,29,.72);
+
+  --card:#ffffff;
+  --border:rgba(0,73,105,.22);
+  --shadow:0 12px 30px rgba(0,0,0,.10);
+
+  --radius:16px;
+
+  /* largeur max image */
+  --img-max-width: 520px;
+
+  /* hauteur max image */
+  --img-max-height: 320px;
+}
+
+/* ======================================================
+   Fond plein écran (couverture totale)
+   ====================================================== */
+html{ height:100%; }
+
+body{
+  margin:0;
+  min-height:100vh;
+  padding: 2.5rem 1.25rem;
+
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+
+  background: linear-gradient(
+    135deg,
+    rgba(129,153,153,.32),
+    rgba(129,153,151,.18),
+    rgba(0,73,105,.16)
+  );
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* ======================================================
+   Centrage global sans modifier les templates
+   - On centre le contenu horizontalement
+   - On centre aussi les éléments inline (ex: lien "Revenir")
+   ====================================================== */
+body{
+  text-align: center;
+}
+
+/* Remettre le texte normal à l’intérieur des cartes (sinon tout est centré) */
+.card,
+.feedback-box,
+.ok{
+  text-align: left;
+}
+
+/* Blocs principaux centrés */
+.card,
+.feedback-box,
+.ok{
+  width: min(980px, 100%);
+  margin: 0 auto;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.card{ padding: 1.6rem; }
+.feedback-box{ padding: 1.4rem; margin-top: 1.4rem; }
+.ok{ padding: 1.2rem; border-left: 6px solid var(--c3); }
+
+/* ======================================================
+   Titres & texte
+   ====================================================== */
+h1{
+  margin: 0 0 1rem 0;
+  color: var(--c4);
+  font-size: 2.1rem;
+  line-height: 1.15;
+}
+
+h2{
+  margin: 1rem 0 .35rem 0;
+  color: var(--c4);
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+h3{
+  margin: 0 0 .9rem 0;
+  color: var(--c4);
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+p{
+  margin: .35rem 0 1rem 0;
+  color: var(--muted);
+}
+
+/* ======================================================
+   Input file
+   ====================================================== */
+input[type="file"]{
+  display:block;
+  width:100%;
+  margin: 1rem 0;
+  padding: .85rem 1rem;
+  border-radius: 14px;
+  border: 1px dashed rgba(0,73,105,.28);
+  background: rgba(129,153,151,.10);
+}
+
+/* ======================================================
+   Images (upload preview + result image)
+   - mêmes dimensions max
+   - centrées
+   ====================================================== */
+#preview,
+img{
+  display:block;
+  width: 100%;
+  max-width: var(--img-max-width);
+  max-height: var(--img-max-height);
+  height: auto;
+  object-fit: contain;       
+
+  margin: 1rem auto 1.25rem auto;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+/* le template upload gère l’affichage via JS */
+#preview{ display:none; }
+
+/* ======================================================
+   Pills feedback
+   ====================================================== */
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:.55rem;
+
+  padding: .62rem .95rem;
+  margin: .35rem .5rem .35rem 0;
+
+  border-radius: 999px;
+  border: 1px solid rgba(0,73,105,.26);
+  background: rgba(129,153,151,.12);
+  cursor:pointer;
+  user-select:none;
+  white-space: nowrap;
+}
+
+.pill:hover{
+  background: rgba(153,146,129,.14);
+  border-color: rgba(0,73,105,.34);
+}
+
+.pill input{
+  margin:0;
+  accent-color: var(--c4);
+}
+
+/* ======================================================
+   Boutons
+   ====================================================== */
+button,
+.btn{
+  appearance:none;
+
+  padding: .78rem 1.15rem;
+  border-radius: 12px;
+  border: 1px solid rgba(0,73,105,.42);
+
+  background: linear-gradient(180deg, rgba(0,73,105,.92), rgba(0,73,105,1));
+  color:#fff;
+  font-weight:700;
+
+  cursor:pointer;
+}
+
+button:hover,
+.btn:hover{ filter: brightness(1.04); }
+
+button:active,
+.btn:active{ transform: translateY(1px); }
+
+/* ======================================================
+   Liens (dont "↩︎ Revenir")
+   - centré car body{text-align:center;}
+   ====================================================== */
+a,
+.btn-link{
+  color: var(--c4);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a:hover,
+.btn-link:hover{ text-decoration: underline; }
+
+/* ======================================================
+   Responsive
+   ====================================================== */
+@media (max-width: 560px){
+  body{ padding: 1.5rem 1rem; }
+  h1{ font-size: 1.8rem; }
+}

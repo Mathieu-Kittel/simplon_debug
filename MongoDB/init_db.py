@@ -12,23 +12,12 @@ db_name = os.getenv("db_name")
 collection_name = os.getenv("collection_name")
 
 
-def confirm(prompt: str) -> bool:
-    """
-    Demande une confirmation à l'utilisateur.
-    Retourne True si la réponse est 'y'.
-
-    Params:
-    prompt: str - Le texte affiché à l'utilisateur
-    """
-    reply = input(f"{prompt} [y/N]: ").strip().lower()
-    return reply == "y"
-
 def main():
     """
     Script d'initialisation de la base MongoDB pour la feedback loop.
-    - Vérifie l'existence de la base
-    - Propose suppression si elle existe
-    - Crée la base et la collection
+    * Vérifie l'existence de la base
+    * Propose la suppression si elle existe
+    * Crée la base et la collection
     """
 
     # Connexion MongoDB
@@ -40,8 +29,9 @@ def main():
 
     if db_name in existing_dbs:
         print(f"⚠️ La base '{db_name}' existe déjà.")
-        if not confirm("La supprimer et la recréer ?"):
-            print("Opération annulée.")
+        user_input = input("Supprimer et recréer la base ? (oui/non)")
+        if user_input.strip().lower() != "oui":
+            input("Script interrompu. Appuyez sur une touche pour quitter.")
             return
 
         # Suppression de la base

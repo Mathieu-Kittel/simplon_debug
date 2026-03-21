@@ -1,6 +1,7 @@
+# Nom du Workflow
 name: CI - Simplon Debug
 
-# Déclenchement du workflow
+# Début du workflow
 on:
   # Pour chaque push/pull-request
   push:
